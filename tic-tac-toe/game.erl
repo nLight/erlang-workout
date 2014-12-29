@@ -1,9 +1,10 @@
 -module(game).
--export([start/0, print_game/1]).
+-export([start/0]).
 
 
 %% Entry point
-start() -> loop([z, z, z, z, z, z, z, z, z]).
+start() ->
+  spawn(fun() -> loop([z, z, z, z, z, z, z, z, z]) end).
 
 %% Sets a player to a position
 set_player(Game, Player, X, Y) ->
