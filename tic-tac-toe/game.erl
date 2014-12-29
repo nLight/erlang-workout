@@ -37,51 +37,35 @@ check_winner(Game, P) ->
 print_game(Game) ->
   io:format("~p~n~p~n~p~n~n", [lists:sublist(Game, 3), lists:sublist(Game, 4, 3), lists:sublist(Game, 7, 3)]).
 
+%% Returns next player
+next_player(LastPlayer) ->
+  case LastPlayer of
+    0 -> x;
+    x -> 0
+  end.
+
 %% Main loop
 loop(Game) ->
   io:format("Starting a new game.~n"),
   loop(Game, 0).
 
-loop(Game, x) ->
+loop(Game, LastPlayer) ->
   print_game(Game),
+  Player = next_player(LastPlayer),
   receive
-    win ->
-      io:format("Winner!~n");
-    {0, X, Y} ->
+    {Player, X, Y} ->
       case check_pos(Game, X, Y) of
         z ->
-          NewGame = set_player(Game, 0, X, Y),
+          NewGame = set_player(Game, Player, X, Y),
           case check_winner(NewGame) of
-            true -> self() ! win;
-            _ -> loop(NewGame, 0)
+            false -> loop(NewGame, Player);
+            _true -> io:format("Winner!~n")
           end;
         _ ->
           io:format("Wrong move!~n"),
-          loop(Game, x)
+          loop(Game, Player)
       end;
     {_Player, _X, _Y} ->
       io:format("Wrong player!~n"),
-      loop(Game, x)
-  end;
-loop(Game, 0) ->
-  print_game(Game),
-  receive
-    win ->
-      io:format("Winner!~n");
-    {x, X, Y} ->
-      case check_pos(Game, X, Y) of
-        z ->
-          NewGame = set_player(Game, x, X, Y),
-          case check_winner(NewGame) of
-            true -> self() ! win;
-            _ -> loop(NewGame, x)
-          end;
-        _ ->
-          io:format("Wrong move!~n"),
-          loop(Game, x)
-      end;
-    {_Player, _X, _Y} ->
-      io:format("Wrong player!~n"),
-      loop(Game, 0)
+      loop(Game, LastPlayer)
   end.
-
