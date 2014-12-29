@@ -15,9 +15,6 @@ set_player(Game, Player, X, Y) ->
 check_pos(Game, X, Y) -> lists:nth(X + Y * 3 + 1, Game).
 
 %% Checks if there's a winner
-check_winner(Game) ->
-  check_winner(Game, 0) or check_winner(Game, x).
-
 check_winner(Game, P) ->
   case Game of
     %% Horizontals
@@ -58,15 +55,15 @@ loop(Game, LastPlayer) ->
       case check_pos(Game, X, Y) of
         z ->
           NewGame = set_player(Game, Player, X, Y),
-          case check_winner(NewGame) of
-            false -> loop(NewGame, Player);
-            _true -> io:format("Winner!~n")
+          case check_winner(NewGame, Player) of
+            true  -> io:format("{} is a winner!~n", Player);
+            false -> loop(NewGame, Player)
           end;
         _ ->
           io:format("Wrong move!~n"),
           loop(Game, Player)
       end;
-    {_Player, _X, _Y} ->
+    {LastPlayer, _X, _Y} ->
       io:format("Wrong player!~n"),
       loop(Game, LastPlayer)
   end.
