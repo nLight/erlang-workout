@@ -27,7 +27,7 @@ loop(Game, x) ->
       NewGame = set_player(Game, 0, X, Y),
       loop(NewGame, 0);
     {_Player, _X, _Y} ->
-      io:format("Wrong player!"),
+      io:format("Wrong player!~n"),
       loop(Game, x)
   end;
 loop(Game, 0) ->
@@ -37,7 +37,7 @@ loop(Game, 0) ->
       NewGame = set_player(Game, x, X, Y),
       loop(NewGame, x);
     {_Player, _X, _Y} ->
-      io:format("Wrong player!"),
+      io:format("Wrong player!~n"),
       loop(Game, 0)
   end.
 
