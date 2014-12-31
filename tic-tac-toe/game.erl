@@ -6,21 +6,21 @@
 start_link() -> gen_server:start_link(?MODULE, [], []).
 
 %% Make a move
-move(Pid, Player, X, Y) ->
-  gen_server:call(Pid, {Player, X, Y}).
+move(Pid, Player, X, Y) -> gen_server:call(Pid, {Player, X, Y}).
 
 %% Prints game field
 print_game(Pid) -> gen_server:call(Pid, print).
 
-%% Server
-init([]) ->
-  {ok, {[z, z, z, z, z, z, z, z, z], nobody}}.
+%% Init empty game field
+init([]) -> {ok, {[z, z, z, z, z, z, z, z, z], nobody}}.
 
 terminate(_Status, _State) -> ok.
 
+%% The same player attempts to move twice
 handle_call({LastPlayer, _X, _Y}, _From, {Game, LastPlayer}) ->
   {reply, "Wrong player!", {Game, LastPlayer}};
 
+%% Regular move
 handle_call({Player, X, Y}, _From, {Game, _LastPlayer}) when Player =:= o ; Player =:= x ->
   case check_pos(Game, X, Y) of
     z ->
@@ -33,6 +33,7 @@ handle_call({Player, X, Y}, _From, {Game, _LastPlayer}) when Player =:= o ; Play
       {reply, "Wrong move!", {Game, Player}}
   end;
 
+%% Print game field
 handle_call(print, _From, {Game, LastPlayer}) ->
   Reply = io_lib:format("~p~n~p~n~p~n~nLast Player: ~p~n",
                         [lists:sublist(Game, 3),
@@ -52,15 +53,32 @@ check_pos(Game, X, Y) -> lists:nth(X + Y * 3 + 1, Game).
 check_winner(Game, P) ->
   case Game of
     %% Horizontals
-    [P, P, P, _, _, _, _, _, _ ] -> true;
-    [_, _, _, P, P, P, _, _, _ ] -> true;
-    [_, _, _, _, _, _, P, P, P ] -> true;
+    [P, P, P,
+     _, _, _,
+     _, _, _ ] -> true;
+    [_, _, _,
+     P, P, P,
+     _, _, _ ] -> true;
+    [_, _, _,
+     _, _, _,
+     P, P, P ] -> true;
     %% Verticals
-    [P, _, _, P, _, _, P, _, _ ] -> true;
-    [_, P, _, _, P, _, _, P, _ ] -> true;
-    [_, _, P, _, _, P, _, _, P ] -> true;
+    [P, _, _,
+     P, _, _,
+     P, _, _ ] -> true;
+    [_, P, _,
+     _, P, _,
+     _, P, _ ] -> true;
+    [_, _, P,
+     _, _, P,
+     _, _, P ] -> true;
     %% Diagonals
-    [P, _, _, _, P, _, _, _, P ] -> true;
-    [_, _, P, _, P, _, P, _, _ ] -> true;
-    _else -> false
+    [P, _, _,
+     _, P, _,
+     _, _, P ] -> true;
+    [_, _, P,
+     _, P, _,
+     P, _, _ ] -> true;
+
+    _Else -> false
   end.
