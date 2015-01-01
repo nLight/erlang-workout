@@ -25,7 +25,7 @@ handle_call({Player, X, Y}, _From, {Game, _LastPlayer}) when Player =:= o ; Play
   case check_pos(Game, X, Y) of
     z ->
       NewGame = set_player(Game, Player, X, Y),
-      case check_winner(NewGame, Player) of
+      case check_winner(Player, NewGame) of
         true  -> {stop, normal, "Winner!", {NewGame, Player}};
         false -> {reply, "Next", {NewGame, Player}}
       end;
@@ -50,35 +50,18 @@ set_player(Game, Player, X, Y) ->
 check_pos(Game, X, Y) -> lists:nth(X + Y * 3 + 1, Game).
 
 %% Checks if there's a winner
-check_winner(Game, P) ->
-  case Game of
-    %% Horizontals
-    [P, P, P,
-     _, _, _,
-     _, _, _ ] -> true;
-    [_, _, _,
-     P, P, P,
-     _, _, _ ] -> true;
-    [_, _, _,
-     _, _, _,
-     P, P, P ] -> true;
-    %% Verticals
-    [P, _, _,
-     P, _, _,
-     P, _, _ ] -> true;
-    [_, P, _,
-     _, P, _,
-     _, P, _ ] -> true;
-    [_, _, P,
-     _, _, P,
-     _, _, P ] -> true;
-    %% Diagonals
-    [P, _, _,
-     _, P, _,
-     _, _, P ] -> true;
-    [_, _, P,
-     _, P, _,
-     P, _, _ ] -> true;
+%% Horizontals
+check_winner(P, [P, P, P, _, _, _, _, _, _ ]) -> true;
+check_winner(P, [_, _, _, P, P, P, _, _, _ ]) -> true;
+check_winner(P, [_, _, _, _, _, _, P, P, P ]) -> true;
 
-    _Else -> false
-  end.
+%% Verticals
+check_winner(P, [P, _, _, P, _, _, P, _, _ ]) -> true;
+check_winner(P, [_, P, _, _, P, _, _, P, _ ]) -> true;
+check_winner(P, [_, _, P, _, _, P, _, _, P ]) -> true;
+
+%% Diagonals
+check_winner(P, [P, _, _, _, P, _, _, _, P ]) -> true;
+check_winner(P, [_, _, P, _, P, _, P, _, _ ]) -> true;
+
+check_winner(_P, _Game) -> false.
