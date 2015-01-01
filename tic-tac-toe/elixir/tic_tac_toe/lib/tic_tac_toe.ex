@@ -2,36 +2,28 @@ defmodule TicTacToe do
   require Logger
   use GenServer
 
-  def start_link() do
-    GenServer.start_link(__MODULE__, [], [])
-  end
+  def start_link(), do: GenServer.start_link(__MODULE__, [], [])
 
   # Make a move
-  def move(pid, player, x, y) do
-    GenServer.call(pid, {player, x, y})
-  end
+  def move(pid, player, x, y), do: GenServer.call(pid, {player, x, y})
 
   # Prints game field
-  def print_game(pid) do
-    GenServer.call(pid, :print)
-  end
+  def print_game(pid) do, GenServer.call(pid, :print)
 
   # Init empty game field
   def init([]) do
     {:ok, {[:z, :z, :z, :z, :z, :z, :z, :z, :z], :nobody}}
   end
 
-  def terminate(_Status, _State) do
-    :ok
-  end
+  def terminate(_status, _state), do: :ok
 
   # The same player attempts to move twice
-  def handle_call({last_player, _X, _Y}, _From, {game, last_player}) do
+  def handle_call({last_player, _x, _y}, _from, {game, last_player}) do
     {:reply, "Wrong player!", {game, last_player}}
   end
 
   # Regular move
-  def handle_call({player, x, y}, _From, {game, last_player}) when player == :o or player == :x do
+  def handle_call({player, x, y}, _from, {game, last_player}) when player == :o or player == :x do
     case check_pos(game, x, y) do
       :z ->
         new_game = set_player(game, player, x, y)
@@ -45,7 +37,7 @@ defmodule TicTacToe do
   end
 
   # Print game field
-  def handle_call(:print, _From, {game, last_player}) do
+  def handle_call(:print, _from, {game, last_player}) do
     reply = :io_lib.format("~p~n~p~n~p~n~nLast Player: ~p~n",
                             [:lists.sublist(game, 3),
                              :lists.sublist(game, 4, 3),
@@ -60,9 +52,7 @@ defmodule TicTacToe do
   end
 
   # Checks if position is available
-  defp check_pos(game, x, y) do
-    :lists.nth(x + y * 3 + 1, game)
-  end
+  defp check_pos(game, x, y), do: :lists.nth(x + y * 3 + 1, game)
 
   # Checks if there's a winner
   # Horizontals
