@@ -47,12 +47,15 @@ defmodule TicTacToe do
 
   # Sets a player to a position
   defp set_player(game, player, x, y) do
-    pos = x + y * 3
+    pos = calc_position(x, y)
     :lists.sublist(game, pos) ++ [player] ++ :lists.nthtail(pos + 1, game)
   end
 
+  # Calculate position in list
+  defp calc_position(x, y), do: x + y * 3
+
   # Checks if position is available
-  defp check_pos(game, x, y), do: :lists.nth(x + y * 3 + 1, game)
+  defp check_pos(game, x, y), do: :lists.nth(calc_position(x, y) + 1, game)
 
   # Checks if there's a winner
   # Horizontals
