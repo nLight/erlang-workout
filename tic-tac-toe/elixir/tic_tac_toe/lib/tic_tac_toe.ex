@@ -8,7 +8,7 @@ defmodule TicTacToe do
   def move(pid, player, x, y), do: GenServer.call(pid, {player, x, y})
 
   # Prints game field
-  def print_game(pid) do, GenServer.call(pid, :print)
+  def print_game(pid), do: GenServer.call(pid, :print)
 
   # Init empty game field
   def init([]) do
@@ -73,4 +73,5 @@ defmodule TicTacToe do
   defp check_winner(p, [_, _, p, _, p, _, p, _, _ ]), do: true
 
   defp check_winner(_, [_, _, _, _, _, _, _, _, _ ]), do: false
+
 end
