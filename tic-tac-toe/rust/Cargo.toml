@@ -1,0 +1,5 @@
+[package]
+
+name = "tictactoe"
+version = "0.0.1"
+authors = ["Dmitriy Rozhkov <dmitriy.rozhkov@xing.com>"]
