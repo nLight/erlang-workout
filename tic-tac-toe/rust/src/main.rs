@@ -1,9 +1,23 @@
+extern crate core;
+
 use std::comm::{channel, Sender, Receiver};
 use std::thread::Thread;
 use std::fmt;
 use std::io;
+use core::str::FromStr;
 
 enum Player { X, O, E }
+
+impl core::str::FromStr for Player {
+  fn from_str(s: &str) -> Option<Self> {
+    match s {
+      "X" => Some(Player::X),
+      "O" => Some(Player::O),
+      "E" => Some(Player::E),
+      _ => None
+    }
+  }
+}
 
 impl std::fmt::Show for Player {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -30,9 +44,25 @@ struct Move {
   y: uint
 }
 
-impl Move {
+impl core::str::FromStr for Move {
   fn from_str(s: &str) -> Option<Self> {
-    Some(Move {player: Player::X, x: 0u, y: 0u})
+    let vec = s.split_str(" ").collect::<Vec<_>>();
+    let arr = vec.as_slice();
+
+    let o_player: Option<Player> = arr[0].parse();
+    let o_x: Option<uint> = arr[1].parse();
+    let o_y: Option<uint> = arr[2].parse();
+
+    match (o_player, o_x, o_y) {
+      (Some(player), Some(x), Some(y)) => Some(Move {player: player, x: x, y: y}),
+      _ => None
+    }
+  }
+}
+
+impl PartialEq for Move {
+  fn eq(&self, other: &Move) -> bool {
+    self.player == other.player && self.x == other.x && self.y == other.y
   }
 }
 
@@ -103,7 +133,7 @@ fn check_winner(player: &Player, game: &[Player; 9]) -> bool {
   }
 }
 
-fn game_loop(_sender: &Sender<int>, receiver: &Receiver<Move>) {
+fn game_loop(sender: &Sender<int>, receiver: &Receiver<Move>) {
   let mut game = [Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E];
   let mut next_move: Move;
   let mut prev_player = Player::E;
@@ -111,8 +141,10 @@ fn game_loop(_sender: &Sender<int>, receiver: &Receiver<Move>) {
   loop {
     next_move = receiver.recv();
 
+    println!("Move: {}", next_move);
+
     if next_move.player == prev_player {
-      println!("On the move \"{}\". Wrong player! Last player was: {}", next_move, prev_player);
+      println!("Wrong player! Last player was: {}", prev_player);
       continue;
     }
 
@@ -120,6 +152,7 @@ fn game_loop(_sender: &Sender<int>, receiver: &Receiver<Move>) {
       set_player(&mut game, &next_move.player, next_move.x, next_move.y);
       if check_winner(&next_move.player, &game) {
         println!("{} is a winner!", next_move.player);
+        sender.send(0);
         break;
       };
 
@@ -128,6 +161,8 @@ fn game_loop(_sender: &Sender<int>, receiver: &Receiver<Move>) {
     else {
       println!("Wrong move!");
     }
+
+    sender.send(1);
   }
 }
 
@@ -135,20 +170,23 @@ fn main() {
   let mut reader = io::stdin();
 
   let (from_parent_sender, from_parent_receiver) = channel();
-  let (from_child_sender, _from_child_receiver) = channel();
+  let (from_child_sender, from_child_receiver) = channel();
 
   Thread::spawn(move || {
     game_loop(&from_child_sender, &from_parent_receiver);
   }).detach();;
 
   loop {
+    println!("Make a move: ");
     let input = reader.read_line().ok().expect("Failed to read line");
-    let parsed_move: Option<Move> = Move::from_str(input.as_slice());
+    let parsed_move: Option<Move> = input.as_slice().trim().parse();
 
     match parsed_move {
       Some(next_move) => from_parent_sender.send(next_move),
       None => println!("Wrong input!")
     }
+
+    if from_child_receiver.recv() == 0 { break; }
   }
 }
 
@@ -195,4 +233,16 @@ fn test_check_position() {
   let game = [Player::E, Player::X, Player::E, Player::O, Player::E, Player::E, Player::E, Player::E, Player::E];
   assert!(check_position(&game, 0u, 0u));
   assert!(check_position(&game, 1u, 0u) == false);
+}
+
+#[test]
+fn test_move_from_string() {
+  assert!("X 1 2".parse() == Some(Move {player: Player::X, x: 1u, y: 2u}));
+}
+
+#[test]
+fn test_player_from_string() {
+  assert!("X".parse() == Some(Player::X));
+  assert!("O".parse() == Some(Player::O));
+  assert!("E".parse() == Some(Player::E));
 }
