@@ -14,10 +14,25 @@ impl std::fmt::Show for Player {
   }
 }
 
+impl PartialEq for Player {
+  fn eq(&self, other: &Player) -> bool {
+    match (self, other) {
+      (&Player::X, &Player::X) | (&Player::O, &Player::O) | (&Player::E, &Player::E) => true,
+      _ => false
+    }
+  }
+}
+
 struct Move {
   player: Player,
   x: uint,
   y: uint
+}
+
+impl std::fmt::Show for Move {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{} moves to ({},{})", self.player, self.x, self.y)
+  }
 }
 
 #[allow(dead_code)]
@@ -83,27 +98,28 @@ fn check_winner(player: &Player, game: &[Player; 9]) -> bool {
   }
 }
 
-fn swap_player(player: &Player) -> Player {
-  match *player {
-    Player::X => Player::O,
-    Player::O => Player::X,
-    Player::E => Player::E
-  }
-}
-
 #[allow(dead_code)]
 fn game_loop(_sender: &Sender<int>, receiver: &Receiver<Move>) {
   let mut game = [Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E];
   let mut next_move: Move;
-  let mut last_player = Player::E;
+  let mut prev_player = Player::E;
 
   loop {
     next_move = receiver.recv();
+
+    if next_move.player == prev_player {
+      println!("On the move \"{}\". Wrong player! Last player was: {}", next_move, prev_player);
+      continue;
+    }
+
     if check_position(&game, next_move.x, next_move.y) {
       set_player(&mut game, &next_move.player, next_move.x, next_move.y);
-      if check_winner(&next_move.player, &game) { break; };
+      if check_winner(&next_move.player, &game) {
+        println!("{} is a winner!", next_move.player);
+        break;
+      };
 
-      last_player = swap_player(&next_move.player);
+      prev_player = next_move.player;
     }
     else {
       println!("Wrong move!");
