@@ -1,6 +1,7 @@
 use std::comm::{channel, Sender, Receiver};
 use std::thread::Thread;
 use std::fmt;
+use std::io;
 
 enum Player { X, O, E }
 
@@ -29,13 +30,18 @@ struct Move {
   y: uint
 }
 
+impl Move {
+  fn from_str(s: &str) -> Option<Self> {
+    Some(Move {player: Player::X, x: 0u, y: 0u})
+  }
+}
+
 impl std::fmt::Show for Move {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{} moves to ({},{})", self.player, self.x, self.y)
   }
 }
 
-#[allow(dead_code)]
 fn check_position(game: &[Player; 9], x: uint, y: uint) -> bool {
   match game[x + y * 3u] {
     Player::E => true,
@@ -43,7 +49,6 @@ fn check_position(game: &[Player; 9], x: uint, y: uint) -> bool {
   }
 }
 
-#[allow(dead_code)]
 fn set_player(game: &mut [Player; 9], player: &Player, x: uint, y: uint) {
   match *player {
     Player::X => game[x+y*3u] = Player::X,
@@ -98,7 +103,6 @@ fn check_winner(player: &Player, game: &[Player; 9]) -> bool {
   }
 }
 
-#[allow(dead_code)]
 fn game_loop(_sender: &Sender<int>, receiver: &Receiver<Move>) {
   let mut game = [Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E, Player::E];
   let mut next_move: Move;
@@ -127,9 +131,28 @@ fn game_loop(_sender: &Sender<int>, receiver: &Receiver<Move>) {
   }
 }
 
-#[allow(dead_code)]
 fn main() {
+  let mut reader = io::stdin();
+
+  let (from_parent_sender, from_parent_receiver) = channel();
+  let (from_child_sender, _from_child_receiver) = channel();
+
+  Thread::spawn(move || {
+    game_loop(&from_child_sender, &from_parent_receiver);
+  }).detach();;
+
+  loop {
+    let input = reader.read_line().ok().expect("Failed to read line");
+    let parsed_move: Option<Move> = Move::from_str(input.as_slice());
+
+    match parsed_move {
+      Some(next_move) => from_parent_sender.send(next_move),
+      None => println!("Wrong input!")
+    }
+  }
 }
+
+// Tests
 
 #[test]
 fn test_game_loop() {
